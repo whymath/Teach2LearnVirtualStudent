@@ -30,21 +30,21 @@ def chunk_documents(docs, tiktoken_len):
 
 def create_raqa_chain_from_docs():
 
-    # # Load the documents from a PDF file using PyMuPDFLoader
-    # docs = PyMuPDFLoader("https://d18rn0p25nwr6d.cloudfront.net/CIK-0001326801/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load() # TODO: Update this to enable user to upload PDF
-    # print("Loaded", len(docs), "documents")
-    # print(docs[0])
+    # Load the documents from a PDF file using PyMuPDFLoader
+    docs = PyMuPDFLoader("https://d18rn0p25nwr6d.cloudfront.net/CIK-0001326801/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load() # TODO: Update this to enable user to upload PDF
+    print("Loaded", len(docs), "documents")
+    print(docs[0])
 
-    # # Create a Qdrant vector store from the split chunks and embedding model, and obtain its retriever
-    # split_chunks = chunk_documents(docs, tiktoken_len)
-    # embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
-    # qdrant_vectorstore = Qdrant.from_documents(
-    #     split_chunks,
-    #     embedding_model,
-    #     location=":memory:",
-    #     collection_name="LoadedPDF",
-    # )
-    # qdrant_retriever = qdrant_vectorstore.as_retriever()
+    # Create a Qdrant vector store from the split chunks and embedding model, and obtain its retriever
+    split_chunks = chunk_documents(docs, tiktoken_len)
+    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
+    qdrant_vectorstore = Qdrant.from_documents(
+        split_chunks,
+        embedding_model,
+        location=":memory:",
+        collection_name="LoadedPDF",
+    )
+    qdrant_retriever = qdrant_vectorstore.as_retriever()
 
     # Define the RAG prompt template
     RAG_PROMPT = """
@@ -57,13 +57,13 @@ def create_raqa_chain_from_docs():
 
     # Create the retrieval augmented QA chain using the Qdrant retriever, RAG prompt, and OpenAI chat model
     openai_chat_model = ChatOpenAI(model="gpt-3.5-turbo")
-    # retrieval_augmented_qa_chain = (
-    #     {"context": itemgetter("question") | qdrant_retriever, "question": itemgetter("question")}
-    #     | RunnablePassthrough.assign(context=itemgetter("context"))
-    #     | {"response": rag_prompt | openai_chat_model, "context": itemgetter("context")}
-    # )
     retrieval_augmented_qa_chain = (
-        {"response": rag_prompt | openai_chat_model}
+        {"context": itemgetter("question") | qdrant_retriever, "question": itemgetter("question")}
+        | RunnablePassthrough.assign(context=itemgetter("context"))
+        | {"response": rag_prompt | openai_chat_model, "context": itemgetter("context")}
     )
+    # retrieval_augmented_qa_chain = (
+    #     {"response": rag_prompt | openai_chat_model}
+    # )
 
     return retrieval_augmented_qa_chain
