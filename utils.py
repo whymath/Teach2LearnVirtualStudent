@@ -28,35 +28,38 @@ def chunk_documents(docs, tiktoken_len):
     return split_chunks
 
 
-def create_raqa_chain_from_docs(docs):
+def create_raqa_chain_from_docs():
+    # Load the documents from a PDF file using PyMuPDFLoader
+    # docs = PyMuPDFLoader("data/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load()
+    docs = PyMuPDFLoader("https://d18rn0p25nwr6d.cloudfront.net/CIK-0001326801/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load()
+    print("Loaded", len(docs), "documents")
+    print(docs[0])
 
-    # # Load the documents from a PDF file using PyMuPDFLoader
-    # docs = PyMuPDFLoader("https://d18rn0p25nwr6d.cloudfront.net/CIK-0001326801/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load() # TODO: Update this to enable user to upload PDF
-    # print("Loaded", len(docs), "documents")
-    # print(docs[0])
-
-    # Create a Qdrant vector store from the split chunks and embedding model, and obtain its retriever
+    # Chunk documents, load embedding model, create vectorstore and retriever
     split_chunks = chunk_documents(docs, tiktoken_len)
     embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
     qdrant_vectorstore = Qdrant.from_documents(
         split_chunks,
         embedding_model,
         location=":memory:",
-        collection_name="LoadedPDF",
+        collection_name="Meta 10-k Filings",
     )
     qdrant_retriever = qdrant_vectorstore.as_retriever()
 
     # Define the RAG prompt template
+    openai_chat_model = ChatOpenAI(model="gpt-3.5-turbo")
     RAG_PROMPT = """
-    Assume you are a virtual student being taught by the user. You can ask clarifying questions to better understand the user's explanation. Your goal is to ensure that the user understands the concept they are explaining. You can also ask questions to help the user elaborate on their explanation. You can ask questions like "Can you explain that in simpler terms?" or "Can you provide an example?".
+    CONTEXT:
+    {context}
 
-    USER MESSAGE:
+    QUERY:
     {question}
+
+    Use the provided context to answer the provided user query. Only use the provided context to answer the query. If you do not know the answer, respond with "I don't know".
     """
     rag_prompt = ChatPromptTemplate.from_template(RAG_PROMPT)
 
-    # Create the retrieval augmented QA chain using the Qdrant retriever, RAG prompt, and OpenAI chat model
-    openai_chat_model = ChatOpenAI(model="gpt-3.5-turbo")
+    # Define the RAQA chain
     retrieval_augmented_qa_chain = (
         {"context": itemgetter("question") | qdrant_retriever, "question": itemgetter("question")}
         | RunnablePassthrough.assign(context=itemgetter("context"))
