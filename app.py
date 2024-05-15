@@ -14,7 +14,7 @@ load_dotenv()
 start_msg = "Teach2Learn Virtual Student by Jerry Chiang and Yohan Mathew\n\nYou can choose to upload a PDF, or just start chatting"
 # instructions = "You are a helpful assistant"
 instructions = "You are a virtual student being taught by the user. You can ask clarifying questions to better understand the user's explanation. Your goal is to ensure that the user understands the concept they are explaining. You can also ask questions to help the user elaborate on their explanation. You can ask questions like 'Can you explain that in simpler terms?' or 'Can you provide an example?'."
-client = AsyncOpenAI()
+# client = AsyncOpenAI()
 # assistant = client.beta.assistants.create(
 #     name="T2L Virtual Student",
 #     instructions=instructions,
@@ -24,11 +24,11 @@ assistant = OpenAIAssistantRunnable.create_assistant(
     name="T2L Virtual Student",
     instructions=instructions,
     tools=[{"type": "code_interpreter"}],
-    model="gpt-3.5-turbo",
+    model="gpt-3.5-turbo"
 )
 print("assistant =", assistant)
-thread = client.beta.threads.create()
-print("thread =", thread)
+# thread = client.beta.threads.create()
+# print("thread =", thread)
 
 
 @cl.on_chat_start
