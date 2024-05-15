@@ -23,8 +23,13 @@ instructions = "You are a virtual student being taught by the user. You can ask 
 assistant = OpenAIAssistantRunnable.create_assistant(
     name="T2L Virtual Student",
     instructions=instructions,
+    model="gpt-3.5-turbo",
     tools=[{"type": "code_interpreter"}],
-    model="gpt-3.5-turbo"
+    tool_resources={
+        "code_interpreter": {
+            "file_ids": ["file-OKohewH4QI0GidqqJzxrkwpj"]
+        }
+    }
 )
 print("assistant =", assistant)
 # thread = client.beta.threads.create()
@@ -55,10 +60,10 @@ async def start_chat():
     cl.user_session.set("settings", settings)
 
     # Send a welcome message with an action button
-    actions = [
-        cl.Action(name="upload_pdf", value="upload_pdf_value", label="Upload a PDF", description="Upload a PDF")
-    ]
-    await cl.Message(content=start_msg, actions=actions).send()
+    # actions = [
+    #     cl.Action(name="upload_pdf", value="upload_pdf_value", label="Upload a PDF", description="Upload a PDF")
+    # ]
+    # await cl.Message(content=start_msg, actions=actions).send()
 
 
 @cl.on_message
@@ -113,6 +118,11 @@ async def main(message: cl.Message):
 
         query_response = assistant.invoke({"content": user_query})
         query_answer = query_response["response"].content
+
+        # run = client.beta.threads.runs.create(
+        #     thread_id=thread.id,
+        #     assistant_id=assistant.id
+        # )
     
     # Create and send the message stream
     print('query_answer =', query_answer)
