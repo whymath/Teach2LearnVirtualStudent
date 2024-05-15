@@ -23,7 +23,7 @@ client = AsyncOpenAI()
 assistant = OpenAIAssistantRunnable.create_assistant(
     name="T2L Virtual Student",
     instructions=instructions,
-    # tools=[{"type": "code_interpreter"}],
+    tools=[{"type": "code_interpreter"}],
     model="gpt-3.5-turbo",
 )
 print("assistant =", assistant)
