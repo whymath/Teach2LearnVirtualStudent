@@ -51,7 +51,10 @@ async def main(message: cl.Message):
     client = settings["client"]
     assistant = settings["assistant"]
     thread = settings["thread"]
-    raqa_chain = settings["raqa_chain"]
+    try:
+        raqa_chain = settings["raqa_chain"]
+    except KeyError:
+        raqa_chain = None
 
     # Generate the response from the chain
     if raqa_chain:
@@ -81,6 +84,8 @@ async def main(message: cl.Message):
         messages = client.beta.threads.messages.list(
             thread_id=thread.id
         )
+        # print("messages =", messages)
+        print("messages.data =", messages.data)
         query_answer = messages.data[0].content
     
     # Create and send the message stream
