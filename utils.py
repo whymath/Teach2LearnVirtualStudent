@@ -28,12 +28,12 @@ def chunk_documents(docs, tiktoken_len):
     return split_chunks
 
 
-def create_raqa_chain_from_docs():
+def create_raqa_chain_from_docs(docs):
 
-    # Load the documents from a PDF file using PyMuPDFLoader
-    docs = PyMuPDFLoader("https://d18rn0p25nwr6d.cloudfront.net/CIK-0001326801/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load() # TODO: Update this to enable user to upload PDF
-    print("Loaded", len(docs), "documents")
-    print(docs[0])
+    # # Load the documents from a PDF file using PyMuPDFLoader
+    # docs = PyMuPDFLoader("https://d18rn0p25nwr6d.cloudfront.net/CIK-0001326801/c7318154-f6ae-4866-89fa-f0c589f2ee3d.pdf").load() # TODO: Update this to enable user to upload PDF
+    # print("Loaded", len(docs), "documents")
+    # print(docs[0])
 
     # Create a Qdrant vector store from the split chunks and embedding model, and obtain its retriever
     split_chunks = chunk_documents(docs, tiktoken_len)
@@ -62,8 +62,5 @@ def create_raqa_chain_from_docs():
         | RunnablePassthrough.assign(context=itemgetter("context"))
         | {"response": rag_prompt | openai_chat_model, "context": itemgetter("context")}
     )
-    # retrieval_augmented_qa_chain = (
-    #     {"response": rag_prompt | openai_chat_model}
-    # )
 
     return retrieval_augmented_qa_chain

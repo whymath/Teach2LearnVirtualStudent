@@ -11,3 +11,4 @@ pymupdf
 wandb
 chainlit
 huggingface_hub
+openai
