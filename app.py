@@ -10,33 +10,48 @@ import time
 load_dotenv()
 
 
+start_msg = "Teach2Learn Virtual Student by Jerry Chiang and Yohan Mathew\n\nYou can choose to upload a PDF, or just start chatting"
+# instructions = "You are a helpful assistant"
+instructions = "You are a virtual student being taught by the user. You can ask clarifying questions to better understand the user's explanation. Your goal is to ensure that the user understands the concept they are explaining. You can also ask questions to help the user elaborate on their explanation. You can ask questions like 'Can you explain that in simpler terms?' or 'Can you provide an example?'."
+client = AsyncOpenAI()
+assistant = client.beta.assistants.create(
+    name="T2L Virtual Student",
+    instructions=instructions,
+    model="gpt-3.5-turbo",
+)
+print("assistant =", assistant)
+thread = client.beta.threads.create()
+print("thread =", thread)
+
+
 @cl.on_chat_start
 async def start_chat():
 
     # Create an OpenAI assistant
-    instructions = "You are a helpful assistant"
-    client = AsyncOpenAI()
-    assistant = client.beta.assistants.create(
-        name="T2L Virtual Student",
-        instructions=instructions,
-        model="gpt-3.5-turbo",
-    )
-    thread = client.beta.threads.create()
+    # instructions = "You are a helpful assistant"
+    # client = AsyncOpenAI()
+    # assistant = client.beta.assistants.create(
+    #     name="T2L Virtual Student",
+    #     instructions=instructions,
+    #     model="gpt-3.5-turbo",
+    # )
+    # thread = client.beta.threads.create()
 
     # Store the assistant and thread in the user session
-    settings = {
-        "instructions": instructions,
-        "client": client,
-        "assistant": assistant,
-        "thread": thread
-    }
+    # settings = {
+    #     "instructions": instructions,
+    #     "client": client,
+    #     "assistant": assistant,
+    #     "thread": thread
+    # }
+    settings = {}
     cl.user_session.set("settings", settings)
 
     # Send a welcome message with an action button
     actions = [
-        cl.Action(name="upload_pdf", value="upload_pdf_value", description="Upload a PDF")
+        cl.Action(name="upload_pdf", value="upload_pdf_value", label="Upload a PDF")
     ]
-    await cl.Message(content="You can choose to upload a PDF, or just start chatting", actions=actions).send()
+    await cl.Message(content=start_msg, actions=actions).send()
 
 
 @cl.on_message
@@ -47,10 +62,10 @@ async def main(message: cl.Message):
 
     # Get the chain from the user session
     settings = cl.user_session.get("settings")
-    instructions = settings["instructions"]
-    client = settings["client"]
-    assistant = settings["assistant"]
-    thread = settings["thread"]
+    # instructions = settings["instructions"]
+    # client = settings["client"]
+    # assistant = settings["assistant"]
+    # thread = settings["thread"]
     try:
         raqa_chain = settings["raqa_chain"]
     except KeyError:
@@ -69,11 +84,13 @@ async def main(message: cl.Message):
             role="user",
             content=user_query
         )
+        print("message =", message)
         run = client.beta.threads.runs.create(
             thread_id=thread.id,
             assistant_id=assistant.id,
             instructions=instructions
         )
+        print("run =", run)
         while run.status == "in_progress" or run.status == "queued":
             time.sleep(1)
             run = client.beta.threads.runs.retrieve(
