@@ -5,6 +5,7 @@ import utils
 
 from openai import AsyncOpenAI
 import time
+from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 
 
 load_dotenv()
@@ -14,9 +15,15 @@ start_msg = "Teach2Learn Virtual Student by Jerry Chiang and Yohan Mathew\n\nYou
 # instructions = "You are a helpful assistant"
 instructions = "You are a virtual student being taught by the user. You can ask clarifying questions to better understand the user's explanation. Your goal is to ensure that the user understands the concept they are explaining. You can also ask questions to help the user elaborate on their explanation. You can ask questions like 'Can you explain that in simpler terms?' or 'Can you provide an example?'."
 client = AsyncOpenAI()
-assistant = client.beta.assistants.create(
+# assistant = client.beta.assistants.create(
+#     name="T2L Virtual Student",
+#     instructions=instructions,
+#     model="gpt-3.5-turbo",
+# )
+assistant = OpenAIAssistantRunnable.create_assistant(
     name="T2L Virtual Student",
     instructions=instructions,
+    # tools=[{"type": "code_interpreter"}],
     model="gpt-3.5-turbo",
 )
 print("assistant =", assistant)
@@ -49,7 +56,7 @@ async def start_chat():
 
     # Send a welcome message with an action button
     actions = [
-        cl.Action(name="upload_pdf", value="upload_pdf_value", label="Upload a PDF")
+        cl.Action(name="upload_pdf", value="upload_pdf_value", label="Upload a PDF", description="Upload a PDF")
     ]
     await cl.Message(content=start_msg, actions=actions).send()
 
@@ -76,36 +83,39 @@ async def main(message: cl.Message):
         print("Using RAQA chain to generate response")
         query_response = raqa_chain.invoke({"question" : user_query})
         query_answer = query_response["response"].content
-        print('query_answer =', query_answer)
     else:
         print("Using OpenAI assistant to generate response")
-        message = client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=user_query
-        )
-        print("message =", message)
-        run = client.beta.threads.runs.create(
-            thread_id=thread.id,
-            assistant_id=assistant.id,
-            instructions=instructions
-        )
-        print("run =", run)
-        while run.status == "in_progress" or run.status == "queued":
-            time.sleep(1)
-            run = client.beta.threads.runs.retrieve(
-                thread_id=thread.id,
-                run_id=run.id
-            )
-        print("run.status =", run.status)
-        messages = client.beta.threads.messages.list(
-            thread_id=thread.id
-        )
-        # print("messages =", messages)
-        print("messages.data =", messages.data)
-        query_answer = messages.data[0].content
+        # message = client.beta.threads.messages.create(
+        #     thread_id=thread.id,
+        #     role="user",
+        #     content=user_query
+        # )
+        # print("message =", message)
+        # run = client.beta.threads.runs.create(
+        #     thread_id=thread.id,
+        #     assistant_id=assistant.id,
+        #     instructions=instructions
+        # )
+        # print("run =", run)
+        # while run.status == "in_progress" or run.status == "queued":
+        #     time.sleep(1)
+        #     run = client.beta.threads.runs.retrieve(
+        #         thread_id=thread.id,
+        #         run_id=run.id
+        #     )
+        # print("run.status =", run.status)
+        # messages = client.beta.threads.messages.list(
+        #     thread_id=thread.id
+        # )
+        # # print("messages =", messages)
+        # print("messages.data =", messages.data)
+        # query_answer = messages.data[0].content
+
+        query_response = assistant.invoke({"content": user_query})
+        query_answer = query_response["response"].content
     
     # Create and send the message stream
+    print('query_answer =', query_answer)
     msg = cl.Message(content=query_answer)
     await msg.send()
 
