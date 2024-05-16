@@ -14,7 +14,7 @@ Assume you are a student and that the user is your teacher. Your goal is to ensu
 You should always first let the user know if they are correct or not, and then ask them questions to help them learn by teaching rather than explaining things to them.
 If they ask for feedback, you should provide constructive feedback on the whole conversation instead of asking another question.
 """
-userled_instructions = """
+aistudent_instructions = """
 Pretend you are a student and that the user is your teacher. Your goal is to get the user to teach you about a topic or concept, and you can ask clarifying questions to help them teach better.
 """
 openai_chat_model = ChatOpenAI(model="gpt-3.5-turbo")
@@ -71,6 +71,7 @@ async def main(message: cl.Message):
 @cl.action_callback("upload_pdf")
 async def upload_pdf_fn(action: cl.Action):
     print("\nRunning PDF upload and RAG chain creation")
+    settings = cl.user_session.get("settings")
 
     # Wait for the user to upload a file
     files = None
@@ -83,10 +84,14 @@ async def upload_pdf_fn(action: cl.Action):
         ).send()
     file_uploaded = files[0]
     # print("\nUploaded file:", file_uploaded, "\n")
+    print("file_uploaded.name =", file_uploaded.name, "; file_uploaded.path =", file_uploaded.path)
 
     # Create the RAG chain and store it in the user session
-    rag_chain = utils.create_rag_chain_from_file(openai_chat_model, base_instructions, file_uploaded.path, file_uploaded.name)
-    settings = cl.user_session.get("settings")
+    if settings["current_mode"] == "ai_student_chain":
+        rag_instructions = aistudent_instructions
+    else:
+        rag_instructions = base_instructions
+    rag_chain = utils.create_rag_chain_from_file(openai_chat_model, rag_instructions, file_uploaded.path, file_uploaded.name)
     settings["rag_chain"] = rag_chain
     settings["current_mode"] = "rag_chain"
     cl.user_session.set("settings", settings)
@@ -98,8 +103,8 @@ async def upload_pdf_fn(action: cl.Action):
 @cl.action_callback("switch_default")
 async def switch_default_fn(action: cl.Action):
     print("\nSwitching back to default base chain")
-
     settings = cl.user_session.get("settings")
+
     settings["rag_chain_available"] = False
     cl.user_session.set("settings", settings)
 
@@ -110,9 +115,9 @@ async def switch_default_fn(action: cl.Action):
 @cl.action_callback("switch_ai_student")
 async def switch_ai_student_fn(action: cl.Action):
     print("\nSwitching to AI student mode")
-
     settings = cl.user_session.get("settings")
-    ai_student_chain = utils.create_base_chain(openai_chat_model, userled_instructions)
+
+    ai_student_chain = utils.create_base_chain(openai_chat_model, aistudent_instructions)
     settings["ai_student_chain"] = ai_student_chain
     settings["current_mode"] = "ai_student_chain"
     cl.user_session.set("settings", settings)
