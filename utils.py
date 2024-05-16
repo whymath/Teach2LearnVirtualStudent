@@ -26,10 +26,10 @@ def chunk_documents(docs, tiktoken_len):
     return split_chunks
 
 
-def create_base_chain(openai_chat_model, base_instructions):
+def create_base_chain(openai_chat_model, system_prompt):
     human_template = "{question}"
     base_prompt = ChatPromptTemplate.from_messages([
-        ("system", base_instructions),
+        ("system", system_prompt),
         ("human", human_template)
     ])
     base_chain = base_prompt | openai_chat_model
@@ -58,7 +58,8 @@ def create_rag_chain_from_file(openai_chat_model, base_instructions, file_path, 
 
     # Define the RAG prompt template
     RAG_PROMPT = """
-    Use the provided context while replying to the user query. Only use the provided context to answer the query.
+    Use the provided context while replying to the user query. Only use the provided context to respond to the query.
+    If the context is not sufficient, you can respond with "I cannot seem to find this topic in the PDF. Would you like to switch to another mode?".
 
     QUERY:
     {question}
