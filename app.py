@@ -48,17 +48,17 @@ async def main(message: cl.Message):
 
     # Generate the response from the chain
     if settings["current_mode"] == "rag_chain":
-        print("\nUsing RAG chain to answer query", user_query)        
+        print("\nUsing RAG chain to answer query:", user_query)        
         rag_chain = settings["rag_chain"]
         query_response = rag_chain.invoke({"question" : user_query})
         query_answer = query_response["response"].content
     elif settings["current_mode"] == "ai_student_chain":
-        print("\nUsing AI student chain to answer query", user_query)
+        print("\nUsing AI student chain to answer query:", user_query)
         ai_student_chain = settings["ai_student_chain"]
         query_response = ai_student_chain.invoke({"question" : user_query})
         query_answer = query_response.content
     else:
-        print("\nUsing base chain to answer query", user_query)
+        print("\nUsing base chain to answer query:", user_query)
         query_response = base_chain.invoke({"question" : user_query})
         query_answer = query_response.content
     
@@ -91,7 +91,7 @@ async def upload_pdf_fn(action: cl.Action):
         rag_instructions = aistudent_instructions
     else:
         rag_instructions = base_instructions
-    rag_chain = utils.create_rag_chain_from_file(openai_chat_model, rag_instructions, file_uploaded.path, file_uploaded.name)
+    rag_chain = utils.create_rag_chain_from_file(openai_chat_model, rag_instructions, file_uploaded, file_uploaded.name)
     settings["rag_chain"] = rag_chain
     settings["current_mode"] = "rag_chain"
     cl.user_session.set("settings", settings)

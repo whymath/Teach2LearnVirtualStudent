@@ -6,6 +6,8 @@ from langchain_community.vectorstores import Qdrant
 from langchain_core.prompts import ChatPromptTemplate
 from operator import itemgetter
 from langchain.schema.runnable import RunnablePassthrough
+from chainlit.types import AskFileResponse
+from langchain.document_loaders import PyPDFLoader
 
 
 def tiktoken_len(text):
@@ -25,6 +27,18 @@ def chunk_documents(docs, tiktoken_len):
     print('len(split_chunks) =', len(split_chunks))
     return split_chunks
 
+def process_file(file: AskFileResponse):
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as tempfile:
+        with open(tempfile.name, "wb") as f:
+            f.write(file.content)
+
+    pypdf_loader = PyPDFLoader(tempfile.name)
+    texts = pypdf_loader.load_and_split()
+    texts = [text.page_content for text in texts]
+    return texts
+
 
 def create_base_chain(openai_chat_model, system_prompt):
     human_template = "{question}"
@@ -37,10 +51,11 @@ def create_base_chain(openai_chat_model, system_prompt):
     return base_chain
 
 
-def create_rag_chain_from_file(openai_chat_model, base_instructions, file_path, file_name):
+def create_rag_chain_from_file(openai_chat_model, base_instructions, file_response, file_name):
 
     # Load the documents from a PDF file using PyMuPDFLoader
-    docs = PyMuPDFLoader(file_path).load()
+    docs = PyMuPDFLoader(file_response.path).load()
+    # docs = process_file(file_response)
     print("Loaded", len(docs), "documents")
     print("First document:\n", docs[0], "\n")
 
