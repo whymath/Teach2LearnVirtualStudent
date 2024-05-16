@@ -9,5 +9,5 @@ qdrant-client
 tiktoken
 pymupdf
 wandb
-chainlit
+chainlit==0.7.700
 huggingface_hub
